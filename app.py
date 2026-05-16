@@ -17,26 +17,25 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-    }
+    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
-    /* Hide default Streamlit elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     .block-container { padding-top: 2rem; padding-bottom: 2rem; max-width: 1200px; }
 
-    /* Hero Title */
+    /* Hero — emoji stays colorful, only text gets gradient */
     .hero-title {
         font-family: 'Syne', sans-serif;
         font-size: 3rem;
         font-weight: 800;
-        background: linear-gradient(135deg, #a78bfa 0%, #38bdf8 60%, #34d399 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
         text-align: center;
         margin-bottom: 0.2rem;
         letter-spacing: -1px;
+    }
+    .hero-title-text {
+        background: linear-gradient(135deg, #a78bfa 0%, #38bdf8 60%, #34d399 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
     .hero-subtitle {
         text-align: center;
@@ -68,13 +67,22 @@ st.markdown("""
         border: 1px solid rgba(167, 139, 250, 0.12);
         border-radius: 16px;
         padding: 22px 24px;
-        margin-bottom: 16px;
+        margin-bottom: 4px;
         transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
     }
     .movie-card:hover {
         border-color: rgba(56, 189, 248, 0.45);
         transform: translateY(-3px);
         box-shadow: 0 8px 32px rgba(56, 189, 248, 0.08);
+    }
+    .movie-card-liked {
+        border-color: rgba(52, 211, 153, 0.5) !important;
+        background: rgba(52, 211, 153, 0.04) !important;
+    }
+    .movie-card-disliked {
+        border-color: rgba(248, 113, 113, 0.4) !important;
+        background: rgba(248, 113, 113, 0.03) !important;
+        opacity: 0.75;
     }
     .movie-title {
         font-family: 'Syne', sans-serif;
@@ -84,12 +92,7 @@ st.markdown("""
         margin-bottom: 8px;
         letter-spacing: -0.3px;
     }
-    .movie-badges {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-bottom: 12px;
-    }
+    .movie-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
     .badge {
         background: rgba(255,255,255,0.05);
         border: 1px solid rgba(255,255,255,0.1);
@@ -98,16 +101,11 @@ st.markdown("""
         font-size: 0.77rem;
         color: #94a3b8;
     }
-    .badge-energy-high { border-color: rgba(52, 211, 153, 0.45); color: #34d399; }
-    .badge-energy-medium { border-color: rgba(56, 189, 248, 0.45); color: #38bdf8; }
-    .badge-energy-low { border-color: rgba(167, 139, 250, 0.45); color: #a78bfa; }
+    .badge-energy-high  { border-color: rgba(52, 211, 153, 0.45); color: #34d399; }
+    .badge-energy-medium{ border-color: rgba(56, 189, 248, 0.45); color: #38bdf8; }
+    .badge-energy-low   { border-color: rgba(167, 139, 250, 0.45); color: #a78bfa; }
 
-    .movie-desc {
-        font-size: 0.93rem;
-        color: #94a3b8;
-        line-height: 1.7;
-        margin-bottom: 14px;
-    }
+    .movie-desc { font-size: 0.93rem; color: #94a3b8; line-height: 1.7; margin-bottom: 14px; }
     .explanation-box {
         background: rgba(56, 189, 248, 0.06);
         border-left: 3px solid #38bdf8;
@@ -119,86 +117,92 @@ st.markdown("""
         margin-bottom: 14px;
     }
 
-    /* Mood detected pill */
+    /* Inline feedback status */
+    .feedback-liked {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: rgba(52, 211, 153, 0.12);
+        border: 1px solid rgba(52, 211, 153, 0.35);
+        color: #34d399; border-radius: 20px;
+        padding: 3px 12px; font-size: 0.8rem; font-weight: 600;
+    }
+    .feedback-disliked {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: rgba(248, 113, 113, 0.1);
+        border: 1px solid rgba(248, 113, 113, 0.35);
+        color: #f87171; border-radius: 20px;
+        padding: 3px 12px; font-size: 0.8rem; font-weight: 600;
+    }
+
+    /* Mood pill */
     .mood-pill {
         display: inline-block;
         background: rgba(52, 211, 153, 0.1);
         border: 1px solid rgba(52, 211, 153, 0.3);
-        color: #34d399;
-        border-radius: 20px;
-        padding: 4px 14px;
-        font-size: 0.85rem;
-        margin-bottom: 16px;
+        color: #34d399; border-radius: 20px;
+        padding: 4px 14px; font-size: 0.85rem; margin-bottom: 16px;
     }
 
     /* Section header */
     .section-header {
         font-family: 'Syne', sans-serif;
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: #f1f5f9;
-        margin-bottom: 16px;
+        font-size: 1.4rem; font-weight: 700;
+        color: #f1f5f9; margin-bottom: 16px;
         padding-bottom: 10px;
         border-bottom: 1px solid rgba(167, 139, 250, 0.15);
         letter-spacing: -0.3px;
     }
 
-    /* Chat messages */
+    /* Refresh strip */
+    .refresh-strip {
+        background: rgba(167, 139, 250, 0.06);
+        border: 1px dashed rgba(167, 139, 250, 0.25);
+        border-radius: 14px; padding: 18px 22px;
+        margin-top: 8px; text-align: center;
+        color: #64748b; font-size: 0.9rem;
+    }
+
+    /* Chat bubbles */
     .chat-bubble-user {
         background: rgba(167, 139, 250, 0.1);
         border: 1px solid rgba(167, 139, 250, 0.2);
         border-radius: 16px 16px 4px 16px;
-        padding: 12px 16px;
-        margin: 8px 0 8px 20%;
-        color: #e9d5ff;
-        font-size: 0.95rem;
-        text-align: right;
+        padding: 12px 16px; margin: 8px 0 8px 20%;
+        color: #e9d5ff; font-size: 0.95rem; text-align: right;
     }
     .chat-bubble-bot {
         background: rgba(56, 189, 248, 0.06);
         border: 1px solid rgba(56, 189, 248, 0.15);
         border-radius: 16px 16px 16px 4px;
-        padding: 12px 16px;
-        margin: 8px 20% 8px 0;
-        color: #e2e8f0;
-        font-size: 0.95rem;
+        padding: 12px 16px; margin: 8px 20% 8px 0;
+        color: #e2e8f0; font-size: 0.95rem;
     }
     .chat-label {
-        font-size: 0.68rem;
-        text-transform: uppercase;
-        letter-spacing: 1.2px;
-        color: #475569;
-        margin-bottom: 4px;
+        font-size: 0.68rem; text-transform: uppercase;
+        letter-spacing: 1.2px; color: #475569; margin-bottom: 4px;
     }
 
-    /* Divider */
     .divider { border-top: 1px solid rgba(167, 139, 250, 0.1); margin: 20px 0; }
 
-    /* Streamlit button overrides */
+    /* Button overrides */
     .stButton > button {
-        border-radius: 10px;
-        font-weight: 600;
-        font-family: 'Inter', sans-serif;
-        transition: all 0.2s;
+        border-radius: 10px; font-weight: 600;
+        font-family: 'Inter', sans-serif; transition: all 0.2s;
     }
     .stButton > button[kind="primary"] {
         background: linear-gradient(135deg, #a78bfa, #38bdf8);
-        border: none;
-        color: white;
+        border: none; color: white;
     }
     .stButton > button:hover { opacity: 0.85; transform: translateY(-1px); }
 
-    /* Tab styling */
+    /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
         border-bottom: 1px solid rgba(167, 139, 250, 0.15);
         margin-bottom: 24px;
     }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 8px 8px 0 0;
-        padding: 10px 22px;
-        font-weight: 600;
-        color: #475569;
+        border-radius: 8px 8px 0 0; padding: 10px 22px;
+        font-weight: 600; color: #475569;
     }
     .stTabs [aria-selected="true"] {
         color: #a78bfa !important;
@@ -206,18 +210,37 @@ st.markdown("""
     }
 
     /* Empty state */
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #334155;
-    }
+    .empty-state { text-align: center; padding: 60px 20px; }
     .empty-state-icon { font-size: 3rem; margin-bottom: 12px; }
     .empty-state-text { font-size: 1rem; color: #475569; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# --- Session State Initialization ---
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def mins_to_hours(mins):
+    """120 → '2h', 97 → '1h 37m', 45 → '45m'"""
+    try:
+        m = int(float(mins))
+        h, rem = divmod(m, 60)
+        if h and rem:
+            return f"{h}h {rem}m"
+        elif h:
+            return f"{h}h"
+        return f"{rem}m"
+    except Exception:
+        return str(mins)
+
+
+def energy_badge_class(energy):
+    return {'High': 'badge-energy-high',
+            'Medium': 'badge-energy-medium',
+            'Low': 'badge-energy-low'}.get(str(energy), '')
+
+
+# ── Session State ─────────────────────────────────────────────────────────────
+
 def init_state():
     defaults = {
         'chat_history': [],
@@ -227,6 +250,9 @@ def init_state():
         'last_recs': None,
         'last_mood': None,
         'show_results': False,
+        'skipped_ids': set(),    # movie_ids hidden via Skip in tab1
+        'feedback_map': {},      # movie_id → 'liked' | 'disliked'
+        'refresh_count': 0,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -235,7 +261,8 @@ def init_state():
 init_state()
 
 
-# --- App State & Initialization ---
+# ── Resources ─────────────────────────────────────────────────────────────────
+
 @st.cache_resource
 def get_recommender():
     return MovieRecommender()
@@ -245,25 +272,29 @@ def get_chatbot():
     return MovieChatbot()
 
 recommender = get_recommender()
-chatbot = get_chatbot()
+chatbot     = get_chatbot()
 
 
-# --- Helper: Energy badge class ---
-def energy_badge_class(energy):
-    mapping = {'High': 'badge-energy-high', 'Medium': 'badge-energy-medium', 'Low': 'badge-energy-low'}
-    return mapping.get(energy, '')
+# ── Movie Card ────────────────────────────────────────────────────────────────
 
-
-# --- Helper: Render a movie card ---
 def render_movie_card(row, explanation, key_suffix, include_feedback=True):
-    energy_cls = energy_badge_class(str(row['energy_level']))
-    genres_str = str(row['genres'])
+    movie_id     = row['movie_id']
+    feedback     = st.session_state.feedback_map.get(movie_id)
+    duration_str = mins_to_hours(row['duration'])
+    energy_cls   = energy_badge_class(row['energy_level'])
+    genres_str   = str(row['genres'])
+
+    card_cls = ""
+    if feedback == 'liked':
+        card_cls = " movie-card-liked"
+    elif feedback == 'disliked':
+        card_cls = " movie-card-disliked"
 
     st.markdown(f"""
-    <div class="movie-card">
+    <div class="movie-card{card_cls}">
         <div class="movie-title">{row['title']}</div>
         <div class="movie-badges">
-            <span class="badge">⏱ {row['duration']} mins</span>
+            <span class="badge">🕐 {duration_str}</span>
             <span class="badge {energy_cls}">⚡ {row['energy_level']}</span>
             <span class="badge">🎭 {genres_str}</span>
         </div>
@@ -273,35 +304,57 @@ def render_movie_card(row, explanation, key_suffix, include_feedback=True):
     """, unsafe_allow_html=True)
 
     if include_feedback:
-        c1, c2, c3, _ = st.columns([1, 1, 1.5, 3])
+        c1, c2, c3, c_status = st.columns([1, 1, 1.3, 4.5])
         with c1:
-            if st.button("👍", key=f"like_{row['movie_id']}_{key_suffix}", help="Like"):
-                recommender.update_feedback(row['movie_id'], 'Like')
-                st.toast(f"Liked {row['title']}!", icon="✅")
+            label = "👍 ✓" if feedback == 'liked' else "👍"
+            if st.button(label, key=f"like_{movie_id}_{key_suffix}", help="Like"):
+                recommender.update_feedback(movie_id, 'Like')
+                st.session_state.feedback_map[movie_id] = 'liked'
+                st.rerun()
         with c2:
-            if st.button("👎", key=f"dislike_{row['movie_id']}_{key_suffix}", help="Dislike"):
-                recommender.update_feedback(row['movie_id'], 'Dislike')
-                st.toast(f"Disliked {row['title']}.", icon="❌")
+            label = "👎 ✓" if feedback == 'disliked' else "👎"
+            if st.button(label, key=f"dislike_{movie_id}_{key_suffix}", help="Dislike"):
+                recommender.update_feedback(movie_id, 'Dislike')
+                st.session_state.feedback_map[movie_id] = 'disliked'
+                st.rerun()
         with c3:
-            if st.button("⏭ Skip", key=f"skip_{row['movie_id']}_{key_suffix}", help="Not Interested"):
-                recommender.update_feedback(row['movie_id'], 'Not Interested')
-                st.toast(f"Skipped {row['title']}.", icon="⏭️")
+            if st.button("⏭ Skip", key=f"skip_{movie_id}_{key_suffix}", help="Remove from list"):
+                recommender.update_feedback(movie_id, 'Not Interested')
+                st.session_state.skipped_ids.add(movie_id)
+                st.rerun()
+        with c_status:
+            if feedback == 'liked':
+                st.markdown("<span class='feedback-liked'>✓ Liked</span>", unsafe_allow_html=True)
+            elif feedback == 'disliked':
+                st.markdown("<span class='feedback-disliked'>✗ Disliked</span>", unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-bottom:10px'></div>", unsafe_allow_html=True)
 
 
-# ========== MAIN UI ==========
+# ══════════════════════════════════════════════════════════════════════════════
+# MAIN UI
+# ══════════════════════════════════════════════════════════════════════════════
 
-st.markdown("<div class='hero-title'>🍿 YourNextBinge</div>", unsafe_allow_html=True)
-st.markdown("<div class='hero-subtitle'>Discover movies tailored exactly to your mood, time, and vibe.</div>", unsafe_allow_html=True)
+# Emoji stays colorful; only the brand name gets the gradient
+st.markdown(
+    "<div class='hero-title'>🍿 <span class='hero-title-text'>YourNextBinge</span></div>",
+    unsafe_allow_html=True
+)
+st.markdown(
+    "<div class='hero-subtitle'>Find your perfect watch — matched to your mood, time, and vibe.</div>",
+    unsafe_allow_html=True
+)
 
-tab1, tab2 = st.tabs(["🎯 Precision Discovery", "💬 Chat Recommendations"])
+tab1, tab2 = st.tabs(["🎬 Find My Movie", "💬 Chat & Discover"])
 
 
-# ===== TAB 1: PRECISION DISCOVERY =====
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 1 — FIND MY MOVIE
+# ══════════════════════════════════════════════════════════════════════════════
 with tab1:
 
-    # ---- Filter Bar (horizontal, top layout) ----
+    # Filter bar
     st.markdown("<div class='filter-bar'>", unsafe_allow_html=True)
-
     col_mood, col_dur, col_energy, col_btns = st.columns([3, 1.5, 1.5, 1.2])
 
     with col_mood:
@@ -309,7 +362,7 @@ with tab1:
         user_mood_text = st.text_input(
             label="mood_input",
             value=st.session_state.mood_text,
-            placeholder="e.g. 'I had a fantastic day!' or 'Feeling tired and sad...'",
+            placeholder="e.g. 'I had a fantastic day!' or 'Feeling tired...'",
             label_visibility="collapsed",
             key="mood_input_widget"
         )
@@ -317,14 +370,14 @@ with tab1:
     with col_dur:
         st.markdown("<div class='filter-label'>Max Duration</div>", unsafe_allow_html=True)
         max_duration = st.slider(
-            "Max Duration (mins)",
+            "Max Duration",
             min_value=60, max_value=240,
             value=st.session_state.max_duration,
             step=10,
             label_visibility="collapsed",
             key="dur_slider"
         )
-        st.caption(f"{max_duration} mins")
+        st.caption(f"Up to {mins_to_hours(max_duration)}")
 
     with col_energy:
         st.markdown("<div class='filter-label'>Energy Level</div>", unsafe_allow_html=True)
@@ -338,118 +391,159 @@ with tab1:
 
     with col_btns:
         st.markdown("<div class='filter-label'>&nbsp;</div>", unsafe_allow_html=True)
-        find_btn = st.button("🚀 Find", use_container_width=True, type="primary", key="find_btn")
+        find_btn  = st.button("🚀 Find",  use_container_width=True, type="primary", key="find_btn")
         clear_btn = st.button("🗑 Clear", use_container_width=True, key="clear_btn")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ---- Handle Clear ----
+    # Clear
     if clear_btn:
-        st.session_state.mood_text = ''
-        st.session_state.max_duration = 120
+        for k in ['mood_text', 'last_recs', 'last_mood']:
+            st.session_state[k] = '' if k == 'mood_text' else None
+        st.session_state.max_duration  = 120
         st.session_state.target_energy = 'Any'
-        st.session_state.last_recs = None
-        st.session_state.last_mood = None
-        st.session_state.show_results = False
+        st.session_state.show_results  = False
+        st.session_state.skipped_ids   = set()
+        st.session_state.feedback_map  = {}
+        st.session_state.refresh_count = 0
         st.rerun()
 
-    # ---- Handle Search ----
+    # Search
     if find_btn:
-        st.session_state.mood_text = user_mood_text
-        st.session_state.max_duration = max_duration
+        st.session_state.mood_text     = user_mood_text
+        st.session_state.max_duration  = max_duration
         st.session_state.target_energy = target_energy
+        st.session_state.skipped_ids   = set()
+        st.session_state.feedback_map  = {}
+        st.session_state.refresh_count = 0
 
-        with st.spinner("Analyzing your preferences... 🧠"):
-            time.sleep(0.8)
+        with st.spinner("Finding your perfect binge... 🍿"):
+            time.sleep(0.7)
             recs, detected_mood = recommender.recommend_movies(
                 user_text=user_mood_text,
                 max_duration=max_duration,
                 target_energy=target_energy
             )
             if len(recs) == 0:
-                recs, detected_mood = recommender.recommend_movies(top_n=3)
+                recs, detected_mood = recommender.recommend_movies(top_n=5)
 
-        st.session_state.last_recs = recs
-        st.session_state.last_mood = detected_mood
+        st.session_state.last_recs   = recs
+        st.session_state.last_mood   = detected_mood
         st.session_state.show_results = True
 
-    # ---- Results ----
+    # Results
     if st.session_state.show_results and st.session_state.last_recs is not None:
-        recs = st.session_state.last_recs
+        recs          = st.session_state.last_recs
         detected_mood = st.session_state.last_mood
+        visible_recs  = recs[~recs['movie_id'].isin(st.session_state.skipped_ids)]
 
         if st.session_state.mood_text:
-            st.markdown(f"<div class='mood-pill'>🎭 Detected Mood: <b>{detected_mood}</b></div>", unsafe_allow_html=True)
-
-        st.markdown("<div class='section-header'>✨ Your Top Recommendations</div>", unsafe_allow_html=True)
-
-        for idx, (_, row) in enumerate(recs.iterrows()):
-            explanation = recommender.explain_recommendation(
-                row, detected_mood,
-                st.session_state.max_duration,
-                st.session_state.target_energy
+            st.markdown(
+                f"<div class='mood-pill'>🎭 Detected Mood: <b>{detected_mood}</b></div>",
+                unsafe_allow_html=True
             )
-            render_movie_card(row, explanation, key_suffix=f"tab1_{idx}")
+
+        st.markdown("<div class='section-header'>✨ Your Top Picks</div>", unsafe_allow_html=True)
+
+        if len(visible_recs) == 0:
+            st.info("You've skipped all suggestions! Hit **Show Me Different Movies** below.")
+        else:
+            for idx, (_, row) in enumerate(visible_recs.iterrows()):
+                explanation = recommender.explain_recommendation(
+                    row, detected_mood,
+                    st.session_state.max_duration,
+                    st.session_state.target_energy
+                )
+                render_movie_card(
+                    row, explanation,
+                    key_suffix=f"t1_r{st.session_state.refresh_count}_{idx}"
+                )
+
+        # "Get a fresh list" strip
+        st.markdown("<div class='refresh-strip'>", unsafe_allow_html=True)
+        st.markdown(
+            "<span style='color:#64748b'>Not feeling any of these?</span>",
+            unsafe_allow_html=True
+        )
+        if st.button("🔄 Show Me Different Movies", key="refresh_btn", type="primary"):
+            with st.spinner("Fetching a fresh batch..."):
+                new_recs, new_mood = recommender.recommend_movies(
+                    user_text=st.session_state.mood_text,
+                    max_duration=st.session_state.max_duration,
+                    target_energy=st.session_state.target_energy,
+                    top_n=5
+                )
+            st.session_state.last_recs     = new_recs
+            st.session_state.last_mood     = new_mood
+            st.session_state.skipped_ids   = set()
+            st.session_state.feedback_map  = {}
+            st.session_state.refresh_count += 1
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
     elif not st.session_state.show_results:
         st.markdown("""
         <div class='empty-state'>
             <div class='empty-state-icon'>🎬</div>
-            <div class='empty-state-text'>Describe your mood above and hit <b>Find</b> to get personalized recommendations.</div>
+            <div class='empty-state-text'>Describe your mood above and hit <b>Find</b> to get personalized picks.</div>
         </div>
         """, unsafe_allow_html=True)
 
 
-# ===== TAB 2: CHAT =====
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 2 — CHAT & DISCOVER  (fully independent of tab1)
+# ══════════════════════════════════════════════════════════════════════════════
 with tab2:
     st.markdown("<div class='section-header'>💬 Chat with YourNextBinge</div>", unsafe_allow_html=True)
     st.caption("Try: *'I want something exciting and high energy under 2 hours, feeling great!'*")
 
-    # Clear chat button (top right)
-    col_spacer, col_clearchat = st.columns([5, 1])
+    _, col_clearchat = st.columns([5, 1])
     with col_clearchat:
         if st.button("🗑 Clear Chat", key="clear_chat_btn"):
             st.session_state.chat_history = []
             st.rerun()
 
-    # ---- Chat history ----
-    chat_container = st.container()
-    with chat_container:
-        if not st.session_state.chat_history:
-            st.markdown("""
-            <div class='empty-state'>
-                <div class='empty-state-icon'>💬</div>
-                <div class='empty-state-text'>Start a conversation to get movie recommendations!</div>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            for i, chat in enumerate(st.session_state.chat_history):
-                if chat['role'] == 'user':
-                    st.markdown(f"""
-                    <div class='chat-label' style='text-align:right;'>You</div>
-                    <div class='chat-bubble-user'>{chat['text']}</div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""
-                    <div class='chat-label'>🤖 AI Guide</div>
-                    <div class='chat-bubble-bot'>{chat['text']}</div>
-                    """, unsafe_allow_html=True)
-                    if 'df' in chat and chat['df'] is not None:
-                        for idx, (_, row) in enumerate(chat['df'].iterrows()):
-                            explanation = recommender.explain_recommendation(
-                                row, chat.get('mood', 'Neutral'),
-                                chat.get('duration', 120),
-                                chat.get('energy', 'Any')
-                            )
-                            render_movie_card(row, explanation, key_suffix=f"chat_{i}_{idx}", include_feedback=True)
+    # History
+    if not st.session_state.chat_history:
+        st.markdown("""
+        <div class='empty-state'>
+            <div class='empty-state-icon'>💬</div>
+            <div class='empty-state-text'>Start a conversation to get movie recommendations!</div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        for i, chat in enumerate(st.session_state.chat_history):
+            if chat['role'] == 'user':
+                st.markdown(f"""
+                <div class='chat-label' style='text-align:right;'>You</div>
+                <div class='chat-bubble-user'>{chat['text']}</div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div class='chat-label'>🤖 YourNextBinge</div>
+                <div class='chat-bubble-bot'>{chat['text']}</div>
+                """, unsafe_allow_html=True)
+                if 'df' in chat and chat['df'] is not None:
+                    for idx, (_, row) in enumerate(chat['df'].iterrows()):
+                        explanation = recommender.explain_recommendation(
+                            row,
+                            chat.get('mood', 'Neutral'),
+                            chat.get('duration', 120),
+                            chat.get('energy', 'Any')
+                        )
+                        render_movie_card(
+                            row, explanation,
+                            key_suffix=f"chat_{i}_{idx}",
+                            include_feedback=True
+                        )
 
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
-    # ---- Input (outside form so no nesting issues) ----
+    # Input — uses its own key, never reads tab1 state
     col_input, col_send = st.columns([5, 1])
     with col_input:
-        user_query = st.text_input(
-            "chat_input",
+        chat_query = st.text_input(
+            "chat_input_field",
             placeholder="What kind of movie are you looking for?",
             label_visibility="collapsed",
             key="chat_text_input"
@@ -457,13 +551,14 @@ with tab2:
     with col_send:
         send_btn = st.button("Send ✉️", use_container_width=True, type="primary", key="send_btn")
 
-    if send_btn and user_query:
-        st.session_state.chat_history.append({"role": "user", "text": user_query})
+    if send_btn and chat_query:
+        st.session_state.chat_history.append({"role": "user", "text": chat_query})
 
         with st.spinner("Thinking..."):
-            response_text, recommendations, mood, detected_duration, detected_energy = chatbot.get_response(
-                recommender, user_query
-            )
+            # chat_query is the user's typed message — completely independent of tab1
+            response_text, recommendations, mood, detected_duration, detected_energy = \
+                chatbot.get_response(recommender, chat_query)
+
             st.session_state.chat_history.append({
                 "role": "bot",
                 "text": response_text,
