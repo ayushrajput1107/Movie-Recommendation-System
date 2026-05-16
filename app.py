@@ -6,8 +6,8 @@ import time
 
 # --- Page Config ---
 st.set_page_config(
-    page_title="AI Movie Compass",
-    page_icon="🎬",
+    page_title="YourNextBinge",
+    page_icon="🍿",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -15,10 +15,10 @@ st.set_page_config(
 # --- Custom Styling ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
     html, body, [class*="css"] {
-        font-family: 'DM Sans', sans-serif;
+        font-family: 'Inter', sans-serif;
     }
 
     /* Hide default Streamlit elements */
@@ -28,58 +28,61 @@ st.markdown("""
 
     /* Hero Title */
     .hero-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 2.8rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #F8B400 0%, #ff6b6b 100%);
+        font-family: 'Syne', sans-serif;
+        font-size: 3rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #a78bfa 0%, #38bdf8 60%, #34d399 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
         margin-bottom: 0.2rem;
+        letter-spacing: -1px;
     }
     .hero-subtitle {
         text-align: center;
-        color: #718096;
+        color: #64748b;
         font-size: 1rem;
         margin-bottom: 2rem;
     }
 
-    /* Filter Bar (top horizontal layout) */
+    /* Filter Bar */
     .filter-bar {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(167, 139, 250, 0.05);
+        border: 1px solid rgba(167, 139, 250, 0.15);
         border-radius: 16px;
         padding: 20px 24px;
         margin-bottom: 24px;
     }
     .filter-label {
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #F8B400;
+        letter-spacing: 1.2px;
+        color: #a78bfa;
         margin-bottom: 6px;
     }
 
     /* Movie Cards */
     .movie-card {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(167, 139, 250, 0.12);
         border-radius: 16px;
         padding: 22px 24px;
         margin-bottom: 16px;
-        transition: border-color 0.2s ease, transform 0.2s ease;
+        transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
     }
     .movie-card:hover {
-        border-color: rgba(248, 180, 0, 0.4);
-        transform: translateY(-2px);
+        border-color: rgba(56, 189, 248, 0.45);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 32px rgba(56, 189, 248, 0.08);
     }
     .movie-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.35rem;
+        font-family: 'Syne', sans-serif;
+        font-size: 1.3rem;
         font-weight: 700;
-        color: #FFFFFF;
-        margin-bottom: 6px;
+        color: #f1f5f9;
+        margin-bottom: 8px;
+        letter-spacing: -0.3px;
     }
     .movie-badges {
         display: flex;
@@ -88,30 +91,30 @@ st.markdown("""
         margin-bottom: 12px;
     }
     .badge {
-        background: rgba(255,255,255,0.07);
+        background: rgba(255,255,255,0.05);
         border: 1px solid rgba(255,255,255,0.1);
         border-radius: 20px;
-        padding: 3px 10px;
-        font-size: 0.78rem;
-        color: #CBD5E0;
+        padding: 3px 11px;
+        font-size: 0.77rem;
+        color: #94a3b8;
     }
-    .badge-energy-high { border-color: rgba(252, 129, 74, 0.5); color: #FC814A; }
-    .badge-energy-medium { border-color: rgba(248, 180, 0, 0.5); color: #F8B400; }
-    .badge-energy-low { border-color: rgba(99, 179, 237, 0.5); color: #63B3ED; }
+    .badge-energy-high { border-color: rgba(52, 211, 153, 0.45); color: #34d399; }
+    .badge-energy-medium { border-color: rgba(56, 189, 248, 0.45); color: #38bdf8; }
+    .badge-energy-low { border-color: rgba(167, 139, 250, 0.45); color: #a78bfa; }
 
     .movie-desc {
-        font-size: 0.95rem;
-        color: #A0AEC0;
-        line-height: 1.65;
+        font-size: 0.93rem;
+        color: #94a3b8;
+        line-height: 1.7;
         margin-bottom: 14px;
     }
     .explanation-box {
-        background: rgba(248, 180, 0, 0.07);
-        border-left: 3px solid #F8B400;
+        background: rgba(56, 189, 248, 0.06);
+        border-left: 3px solid #38bdf8;
         padding: 10px 14px;
         border-radius: 0 10px 10px 0;
         font-size: 0.875rem;
-        color: #ECC94B;
+        color: #7dd3fc;
         font-style: italic;
         margin-bottom: 14px;
     }
@@ -119,9 +122,9 @@ st.markdown("""
     /* Mood detected pill */
     .mood-pill {
         display: inline-block;
-        background: rgba(99, 179, 237, 0.12);
-        border: 1px solid rgba(99, 179, 237, 0.3);
-        color: #90CDF4;
+        background: rgba(52, 211, 153, 0.1);
+        border: 1px solid rgba(52, 211, 153, 0.3);
+        color: #34d399;
         border-radius: 20px;
         padding: 4px 14px;
         font-size: 0.85rem;
@@ -130,84 +133,86 @@ st.markdown("""
 
     /* Section header */
     .section-header {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.5rem;
-        color: #FFFFFF;
+        font-family: 'Syne', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #f1f5f9;
         margin-bottom: 16px;
         padding-bottom: 10px;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
+        border-bottom: 1px solid rgba(167, 139, 250, 0.15);
+        letter-spacing: -0.3px;
     }
 
     /* Chat messages */
     .chat-bubble-user {
-        background: rgba(248, 180, 0, 0.12);
-        border: 1px solid rgba(248, 180, 0, 0.2);
+        background: rgba(167, 139, 250, 0.1);
+        border: 1px solid rgba(167, 139, 250, 0.2);
         border-radius: 16px 16px 4px 16px;
         padding: 12px 16px;
         margin: 8px 0 8px 20%;
-        color: #FEF3C7;
+        color: #e9d5ff;
         font-size: 0.95rem;
         text-align: right;
     }
     .chat-bubble-bot {
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(56, 189, 248, 0.06);
+        border: 1px solid rgba(56, 189, 248, 0.15);
         border-radius: 16px 16px 16px 4px;
         padding: 12px 16px;
         margin: 8px 20% 8px 0;
-        color: #E2E8F0;
+        color: #e2e8f0;
         font-size: 0.95rem;
     }
     .chat-label {
-        font-size: 0.7rem;
+        font-size: 0.68rem;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #718096;
+        letter-spacing: 1.2px;
+        color: #475569;
         margin-bottom: 4px;
     }
 
     /* Divider */
-    .divider { border-top: 1px solid rgba(255,255,255,0.07); margin: 20px 0; }
+    .divider { border-top: 1px solid rgba(167, 139, 250, 0.1); margin: 20px 0; }
 
     /* Streamlit button overrides */
     .stButton > button {
         border-radius: 10px;
         font-weight: 600;
-        font-family: 'DM Sans', sans-serif;
+        font-family: 'Inter', sans-serif;
         transition: all 0.2s;
     }
     .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #F8B400, #ff6b6b);
+        background: linear-gradient(135deg, #a78bfa, #38bdf8);
         border: none;
         color: white;
     }
-    .stButton > button:hover { opacity: 0.88; transform: translateY(-1px); }
+    .stButton > button:hover { opacity: 0.85; transform: translateY(-1px); }
 
     /* Tab styling */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
+        border-bottom: 1px solid rgba(167, 139, 250, 0.15);
         margin-bottom: 24px;
     }
     .stTabs [data-baseweb="tab"] {
         border-radius: 8px 8px 0 0;
         padding: 10px 22px;
         font-weight: 600;
-        color: #718096;
+        color: #475569;
     }
     .stTabs [aria-selected="true"] {
-        color: #F8B400 !important;
-        border-bottom: 2px solid #F8B400 !important;
+        color: #a78bfa !important;
+        border-bottom: 2px solid #a78bfa !important;
     }
 
     /* Empty state */
     .empty-state {
         text-align: center;
         padding: 60px 20px;
-        color: #4A5568;
+        color: #334155;
     }
     .empty-state-icon { font-size: 3rem; margin-bottom: 12px; }
-    .empty-state-text { font-size: 1rem; }
+    .empty-state-text { font-size: 1rem; color: #475569; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -285,7 +290,7 @@ def render_movie_card(row, explanation, key_suffix, include_feedback=True):
 
 # ========== MAIN UI ==========
 
-st.markdown("<div class='hero-title'>🎦 AI Movie Compass</div>", unsafe_allow_html=True)
+st.markdown("<div class='hero-title'>🍿 YourNextBinge</div>", unsafe_allow_html=True)
 st.markdown("<div class='hero-subtitle'>Discover movies tailored exactly to your mood, time, and vibe.</div>", unsafe_allow_html=True)
 
 tab1, tab2 = st.tabs(["🎯 Precision Discovery", "💬 Chat Recommendations"])
@@ -397,7 +402,7 @@ with tab1:
 
 # ===== TAB 2: CHAT =====
 with tab2:
-    st.markdown("<div class='section-header'>💬 Chat with the AI Movie Guide</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>💬 Chat with YourNextBinge</div>", unsafe_allow_html=True)
     st.caption("Try: *'I want something exciting and high energy under 2 hours, feeling great!'*")
 
     # Clear chat button (top right)
