@@ -184,10 +184,12 @@ def init_state():
         'show_results': False,
         'skipped_ids': set(),
         'feedback_map': {},
+        'chat_skipped_ids': set(),
         'refresh_count': 0,
         'seen_movie_ids': set(),   # accumulates across refreshes to avoid repeats
         # tab2 — completely separate
         'chat_history': [],
+        'chat_feedback_map': {},
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -199,22 +201,36 @@ init_state()
 # ── Resources ─────────────────────────────────────────────────────────────────
 
 @st.cache_resource
-def get_recommender():
+def get_finder_recommender():
+    return MovieRecommender()
+
+@st.cache_resource
+def get_chat_recommender():
     return MovieRecommender()
 
 @st.cache_resource
 def get_chatbot():
     return MovieChatbot()
 
-recommender = get_recommender()
+recommender = get_finder_recommender()
+chat_recommender = get_chat_recommender()
 chatbot     = get_chatbot()
 
 
 # ── Movie Card ────────────────────────────────────────────────────────────────
 
-def render_movie_card(row, explanation, key_suffix, include_feedback=True):
+def render_movie_card(
+    row,
+    explanation,
+    key_suffix,
+    include_feedback=True,
+    feedback_map_key="feedback_map",
+    feedback_recommender=None,
+    skipped_ids_key="skipped_ids"
+):
     movie_id     = row['movie_id']
-    feedback     = st.session_state.feedback_map.get(movie_id)
+    feedback_map = st.session_state.get(feedback_map_key, {})
+    feedback     = feedback_map.get(movie_id)
     duration_str = mins_to_hours(row['duration'])
     energy_cls   = energy_badge_class(row['energy_level'])
     genres_str   = str(row['genres'])
@@ -241,19 +257,22 @@ def render_movie_card(row, explanation, key_suffix, include_feedback=True):
         with c1:
             lbl = "👍 ✓" if feedback == 'liked' else "👍"
             if st.button(lbl, key=f"like_{movie_id}_{key_suffix}", help="Like"):
-                recommender.update_feedback(movie_id, 'Like')
-                st.session_state.feedback_map[movie_id] = 'liked'
+                target_recommender = feedback_recommender or recommender
+                target_recommender.update_feedback(movie_id, 'Like')
+                st.session_state[feedback_map_key][movie_id] = 'liked'
                 st.rerun()
         with c2:
             lbl = "👎 ✓" if feedback == 'disliked' else "👎"
             if st.button(lbl, key=f"dislike_{movie_id}_{key_suffix}", help="Dislike"):
-                recommender.update_feedback(movie_id, 'Dislike')
-                st.session_state.feedback_map[movie_id] = 'disliked'
+                target_recommender = feedback_recommender or recommender
+                target_recommender.update_feedback(movie_id, 'Dislike')
+                st.session_state[feedback_map_key][movie_id] = 'disliked'
                 st.rerun()
         with c3:
             if st.button("⏭ Skip", key=f"skip_{movie_id}_{key_suffix}", help="Remove from list"):
-                recommender.update_feedback(movie_id, 'Not Interested')
-                st.session_state.skipped_ids.add(movie_id)
+                target_recommender = feedback_recommender or recommender
+                target_recommender.update_feedback(movie_id, 'Not Interested')
+                st.session_state[skipped_ids_key].add(movie_id)
                 st.rerun()
         with c_status:
             if feedback == 'liked':
@@ -285,7 +304,6 @@ tab1, tab2 = st.tabs(["🎬 Find My Movie", "💬 Chat & Discover"])
 # ══════════════════════════════════════════════════════════════════════════════
 with tab1:
 
-    # ── Filter row — NO wrapping div, just columns ──────────────────────────
     col_mood, col_dur, col_energy, col_btns = st.columns([3, 1.5, 1.5, 1.2])
 
     with col_mood:
@@ -320,23 +338,21 @@ with tab1:
         find_btn  = st.button("🚀 Find",  use_container_width=True, type="primary", key="find_btn")
         clear_btn = st.button("🗑 Clear", use_container_width=True, key="clear_btn")
 
-    st.markdown("---", unsafe_allow_html=False)   # simple HR — no rectangle
+    st.markdown("---", unsafe_allow_html=False)
 
-    # ── Clear ────────────────────────────────────────────────────────────────
     if clear_btn:
-        st.session_state.mood_text     = ''
-        st.session_state.max_duration  = 120
-        st.session_state.target_energy = 'Any'
-        st.session_state.last_recs     = None
-        st.session_state.last_mood     = None
-        st.session_state.show_results  = False
-        st.session_state.skipped_ids   = set()
-        st.session_state.feedback_map  = {}
-        st.session_state.refresh_count = 0
+        st.session_state.mood_text      = ''
+        st.session_state.max_duration   = 120
+        st.session_state.target_energy  = 'Any'
+        st.session_state.last_recs      = None
+        st.session_state.last_mood      = None
+        st.session_state.show_results   = False
+        st.session_state.skipped_ids    = set()
+        st.session_state.feedback_map   = {}
+        st.session_state.refresh_count  = 0
         st.session_state.seen_movie_ids = set()
         st.rerun()
 
-    # ── Search ───────────────────────────────────────────────────────────────
     if find_btn:
         st.session_state.mood_text      = user_mood_text
         st.session_state.max_duration   = max_duration
@@ -356,17 +372,15 @@ with tab1:
             if len(recs) == 0:
                 recs, detected_mood = recommender.recommend_movies(top_n=5)
 
-        # track which ids have been shown
         st.session_state.seen_movie_ids = set(recs['movie_id'].tolist())
         st.session_state.last_recs      = recs
         st.session_state.last_mood      = detected_mood
         st.session_state.show_results   = True
 
-    # ── Results ──────────────────────────────────────────────────────────────
     if st.session_state.show_results and st.session_state.last_recs is not None:
-        recs         = st.session_state.last_recs
+        recs          = st.session_state.last_recs
         detected_mood = st.session_state.last_mood
-        visible_recs = recs[~recs['movie_id'].isin(st.session_state.skipped_ids)]
+        visible_recs  = recs[~recs['movie_id'].isin(st.session_state.skipped_ids)]
 
         if st.session_state.mood_text:
             st.markdown(
@@ -387,13 +401,15 @@ with tab1:
                 )
                 render_movie_card(
                     row, explanation,
-                    key_suffix=f"t1_r{st.session_state.refresh_count}_{idx}"
+                    key_suffix=f"t1_r{st.session_state.refresh_count}_{idx}",
+                    include_feedback=True,
+                    feedback_map_key="feedback_map",
+                    feedback_recommender=recommender,
+                    skipped_ids_key="skipped_ids"
                 )
 
-        # ── Refresh button — key includes refresh_count so it's always fresh ─
         st.markdown(" ")
         st.caption("Not feeling any of these?")
-        # Dynamic key = button is re-registered on every refresh so it keeps working
         if st.button(
             "🔄 Show Me Different Movies",
             key=f"refresh_btn_{st.session_state.refresh_count}",
@@ -404,21 +420,18 @@ with tab1:
                     user_text=st.session_state.mood_text,
                     max_duration=st.session_state.max_duration,
                     target_energy=st.session_state.target_energy,
-                    top_n=5
+                    top_n=5,
+                    exclude_movie_ids=st.session_state.seen_movie_ids
                 )
-                # If recommender keeps returning same movies, fall back to top_n without filters
-                if (new_recs is not None and len(new_recs) > 0 and
-                        set(new_recs['movie_id'].tolist()).issubset(st.session_state.seen_movie_ids)):
-                    new_recs, new_mood = recommender.recommend_movies(top_n=5)
 
             if new_recs is not None and len(new_recs) > 0:
                 st.session_state.seen_movie_ids.update(new_recs['movie_id'].tolist())
 
-            st.session_state.last_recs    = new_recs
-            st.session_state.last_mood    = new_mood
-            st.session_state.skipped_ids  = set()
-            st.session_state.feedback_map = {}
-            st.session_state.refresh_count += 1   # changes key → button always clickable
+            st.session_state.last_recs     = new_recs
+            st.session_state.last_mood     = new_mood
+            st.session_state.skipped_ids   = set()
+            st.session_state.feedback_map  = {}
+            st.session_state.refresh_count += 1
             st.rerun()
 
     elif not st.session_state.show_results:
@@ -431,7 +444,7 @@ with tab1:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TAB 2 — CHAT & DISCOVER  (100% independent of tab1)
+# TAB 2 — CHAT & DISCOVER
 # ══════════════════════════════════════════════════════════════════════════════
 with tab2:
     st.markdown("<div class='section-header'>💬 Chat with YourNextBinge</div>", unsafe_allow_html=True)
@@ -441,9 +454,10 @@ with tab2:
     with col_clearchat:
         if st.button("🗑 Clear Chat", key="clear_chat_btn"):
             st.session_state.chat_history = []
+            st.session_state.chat_feedback_map = {}
+            st.session_state.chat_skipped_ids = set()
             st.rerun()
 
-    # ── Chat history ─────────────────────────────────────────────────────────
     if not st.session_state.chat_history:
         st.markdown("""
         <div class='empty-state'>
@@ -465,7 +479,7 @@ with tab2:
                 """, unsafe_allow_html=True)
                 if 'df' in chat and chat['df'] is not None:
                     for idx, (_, row) in enumerate(chat['df'].iterrows()):
-                        explanation = recommender.explain_recommendation(
+                        explanation = chat_recommender.explain_recommendation(
                             row,
                             chat.get('mood', 'Neutral'),
                             chat.get('duration', 120),
@@ -474,12 +488,14 @@ with tab2:
                         render_movie_card(
                             row, explanation,
                             key_suffix=f"chat_{i}_{idx}",
-                            include_feedback=True
+                            include_feedback=True,
+                            feedback_map_key="chat_feedback_map",
+                            feedback_recommender=chat_recommender,
+                            skipped_ids_key="chat_skipped_ids"
                         )
 
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
-    # ── Input — isolated from tab1 entirely ──────────────────────────────────
     col_input, col_send = st.columns([5, 1])
     with col_input:
         chat_query = st.text_input(
@@ -492,14 +508,12 @@ with tab2:
         send_btn = st.button("Send ✉️", use_container_width=True, type="primary", key="send_btn")
 
     if send_btn and chat_query:
-        # Save what the user typed right now
         current_query = chat_query
         st.session_state.chat_history.append({"role": "user", "text": current_query})
 
         with st.spinner("Thinking..."):
-            # Pass current_query directly — no session state from tab1 involved
             response_text, recommendations, mood, detected_duration, detected_energy = \
-                chatbot.get_response(recommender, current_query)
+                chatbot.get_response(chat_recommender, current_query)
 
         st.session_state.chat_history.append({
             "role": "bot",
